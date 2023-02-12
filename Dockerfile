@@ -33,4 +33,6 @@ RUN wget -q https://github.com/conda-forge/miniforge/releases/latest/download/Ma
 
 RUN mamba install -y -c conda-forge elyra-pipeline-editor-extension
 
+USER 1000
+
 CMD ["jupyter", "lab", "--no-browser", "--ip", "0.0.0.0"]
