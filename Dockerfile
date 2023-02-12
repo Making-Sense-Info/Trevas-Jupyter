@@ -1,4 +1,5 @@
-FROM jupyter/pyspark-notebook:latest
+# Python & R spark support
+FROM jupyter/all-spark-notebook:latest
 
 # Allows the kernel to load the Spark and Hadoop config.
 ENV CLASSPATH_PREFIX "/opt/hadoop/etc/hadoop:/opt/spark/conf"
@@ -11,6 +12,6 @@ COPY target/appassembler/repo/fr/insee/trevas/vtl-model/*/vtl-model-*.jar /vtl-m
 COPY target/appassembler/repo/fr/insee/trevas/vtl-engine/*/vtl-engine-*.jar /vtl-engine.jar
 COPY target/appassembler/repo/fr/insee/trevas/vtl-parser/*/vtl-parser-*.jar /vtl-parser.jar
 
-RUN pip3 install --upgrade "elyra-pipeline-editor-extension"
+RUN /opt/conda/bin/conda install -c conda-forge "elyra-pipeline-editor-extension"
 
 CMD ["jupyter", "lab", "--no-browser", "--ip", "0.0.0.0"]
