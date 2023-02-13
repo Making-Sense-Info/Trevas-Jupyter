@@ -15,12 +15,12 @@ COPY target/appassembler/repo/fr/insee/trevas/vtl-parser/*/vtl-parser-*.jar /vtl
 USER root
 
 # Install OpenJDK-13
-RUN apt-get update && \
-    apt-get install -y openjdk-13-jdk && \
-    apt-get clean;
-
-ENV JAVA_HOME="/usr/lib/jvm/openjdk-13-jdk"
+ENV JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+RUN apt-get update && \
+    apt-get install -y openjdk-11-jre-headless && \
+    apt-get clean;
 
 # Install Elyra
 
