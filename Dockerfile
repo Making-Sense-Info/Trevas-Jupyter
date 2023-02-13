@@ -12,6 +12,8 @@ COPY target/appassembler/repo/fr/insee/trevas/vtl-model/*/vtl-model-*.jar /vtl-m
 COPY target/appassembler/repo/fr/insee/trevas/vtl-engine/*/vtl-engine-*.jar /vtl-engine.jar
 COPY target/appassembler/repo/fr/insee/trevas/vtl-parser/*/vtl-parser-*.jar /vtl-parser.jar
 
+USER root
+
 # Install OpenJDK-13
 RUN apt-get update && \
     apt-get install -y openjdk-13-jdk && \
@@ -24,8 +26,6 @@ ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 ENV MAMBA_DIR="/opt/mamba"
 ENV PATH="${MAMBA_DIR}/bin:${PATH}"
-
-USER root
 
 COPY ./docker-config/conda-env.yml .
 
