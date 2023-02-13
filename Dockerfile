@@ -17,7 +17,6 @@ ENV PATH="${MAMBA_DIR}/bin:${PATH}"
 
 USER root
 
-COPY ./docker-config/jupyter_notebook_config.py /config/location/jupyter_notebook_config.py
 COPY ./docker-config/conda-env.yml .
 
 RUN wget -q https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh -O mambaforge.sh && \
