@@ -12,6 +12,16 @@ COPY target/appassembler/repo/fr/insee/trevas/vtl-model/*/vtl-model-*.jar /vtl-m
 COPY target/appassembler/repo/fr/insee/trevas/vtl-engine/*/vtl-engine-*.jar /vtl-engine.jar
 COPY target/appassembler/repo/fr/insee/trevas/vtl-parser/*/vtl-parser-*.jar /vtl-parser.jar
 
+# Install OpenJDK-13
+RUN apt-get update && \
+    apt-get install -y openjdk-13-jre-headless && \
+    apt-get clean;
+
+ENV JAVA_HOME="/usr/lib/jvm/java-13-openjdk-amd64"
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+# Install Elyra
+
 ENV MAMBA_DIR="/opt/mamba"
 ENV PATH="${MAMBA_DIR}/bin:${PATH}"
 
