@@ -4,6 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <packaging>jar</packaging>
+
     <name>VTL Jupyter kernel</name>
     <description>Jupyter notebook providing VTL support through Trevas engine</description>
     <artifactId>trevas-jupyter</artifactId>
@@ -122,12 +124,21 @@
                     <programs>
                         <program>
                             <mainClass>fr.insee.trevas.jupyter.VtlKernel</mainClass>
-                            <id>trevas</id>
+                            <id>trevas-windows</id>
+                            <platforms>
+                                <platform>windows</platform>
+                            </platforms>
+                        </program>
+                        <program>
+                            <mainClass>fr.insee.trevas.jupyter.VtlKernel</mainClass>
+                            <id>trevas-unix</id>
                             <platforms>
                                 <platform>unix</platform>
                             </platforms>
                         </program>
                     </programs>
+                    <repositoryLayout>flat</repositoryLayout>
+                    <useWildcardClassPath>true</useWildcardClassPath>
                 </configuration>
             </plugin>
             <plugin>
