@@ -1,6 +1,6 @@
 {
   "argv": [
-    "/usr/local/share/jupyter/kernels/trevas/bin/trevas-unix",
+    "jupyter_kernel_path/trevas-windows.bat",
     "{connection_file}"
   ],
   "display_name": "Trevas VTL",
