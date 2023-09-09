@@ -10,7 +10,7 @@
     <description>Jupyter notebook providing VTL support through Trevas engine</description>
     <artifactId>trevas-jupyter</artifactId>
     <groupId>fr.insee</groupId>
-    <version>0.3.2</version>
+    <version>0.4.0</version>
 
     <licenses>
         <license>
@@ -22,7 +22,7 @@
     <properties>
         <jdk.version>11</jdk.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <trevas.version>1.0.2</trevas.version>
+        <trevas.version>1.1.0</trevas.version>
     </properties>
 
     <repositories>
@@ -35,11 +35,8 @@
             <url>https://repos.spark-packages.org/</url>
         </repository>
         <repository>
-            <id>Github</id>
-            <url>https://maven.pkg.github.com/InseeFr/Trevas</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
+            <id>vendor</id>
+            <url>file://${project.basedir}/vendor</url>
         </repository>
     </repositories>
 
@@ -89,12 +86,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.akovari</groupId>
-            <artifactId>antlr4-autocomplete</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
             <groupId>io.github.spencerpark</groupId>
             <artifactId>jupyter-jvm-basekernel</artifactId>
             <version>2.3.0</version>
@@ -121,6 +112,12 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
             <version>3.3.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.intigua</groupId>
+            <artifactId>antlr4-autosuggest</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
