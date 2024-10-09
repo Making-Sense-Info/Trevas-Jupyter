@@ -65,7 +65,7 @@ jobs:
         run: ./mvnw package
   deploy-dockerhub:
     needs: package
-    if: github.repository == 'makingsenseinfo/trevas-jupyter' &&
+    if: github.repository == 'making-sense-info/trevas-jupyter' &&
         github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
