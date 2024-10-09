@@ -65,7 +65,7 @@ jobs:
         run: ./mvnw package
   deploy-dockerhub:
     needs: package
-    if: github.repository == 'inseefrlab/trevas-jupyter' &&
+    if: github.repository == 'makingsenseinfo/trevas-jupyter' &&
         github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -93,7 +93,7 @@ jobs:
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v5.5.1
         with:
-          images: inseefrlab/trevas-jupyter # list of Docker images to use as base name for tags
+          images: makingsenseinfo/trevas-jupyter # list of Docker images to use as base name for tags
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -112,7 +112,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ steps.docker_meta.outputs.tags }}
-            ${{ github.ref == 'refs/heads/main' && 'inseefrlab/trevas-jupyter:latest' || '' }}
+            ${{ github.ref == 'refs/heads/main' && 'makingsenseinfo/trevas-jupyter:latest' || '' }}
           labels: ${{ steps.docker_meta.outputs.labels }}
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
