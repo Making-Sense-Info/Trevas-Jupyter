@@ -150,7 +150,7 @@ public class VtlKernel extends BaseKernel {
 
 		SDMXVTLWorkflow sdmxVtlWorkflow = new SDMXVTLWorkflow(engine, rdl, Map.of());
 
-		Map<String, Dataset> emptyDatasets = sdmxVtlWorkflow.getEmptyDatasets();
+		Map<String, Dataset> emptyDatasets = sdmxVtlWorkflow.getMappedEmptyDatasets();
 		engine.getBindings(ScriptContext.ENGINE_SCOPE).putAll(emptyDatasets);
 
 		Map<String, PersistentDataset> results = sdmxVtlWorkflow.run();
