@@ -135,7 +135,7 @@ jobs:
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v5.7.0
         with:
-          images: inseefrlab/trevas-jupyter
+          images: makingsenseinfo/trevas-jupyter
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.6.0
@@ -157,8 +157,8 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            inseefrlab/trevas-jupyter:${{ steps.extract_version.outputs.VERSION }}
-            inseefrlab/trevas-jupyter:latest
+            makingsenseinfo/trevas-jupyter:${{ steps.extract_version.outputs.VERSION }}
+            makingsenseinfo/trevas-jupyter:latest
           labels: ${{ steps.docker_meta.outputs.labels }}
 
       - name: Image digest
