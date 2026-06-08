@@ -21,6 +21,7 @@
         <jdk.version>17</jdk.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <trevas.version>2.3.0</trevas.version>
+        <spark.version>3.5.8</spark.version>
         <spotless.version>2.43.0</spotless.version>
     </properties>
 
@@ -117,7 +118,7 @@
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-kubernetes_2.12</artifactId>
-            <version>3.5.0</version>
+            <version>${spark.version}</version>
         </dependency>
 
         <dependency>

@@ -26,8 +26,11 @@ public class SparkUtils {
 	public static SparkSession buildSparkSession() {
 		SparkSession.Builder sparkBuilder = SparkSession.builder();
 		SparkConf conf = new SparkConf(true);
-		String spark_home = System.getenv("SPARK_HOME") + "/conf";
-		Path path = Path.of(spark_home, "spark-defaults.conf");
+		String sparkHome = System.getenv("SPARK_HOME");
+		if (sparkHome == null) {
+			return sparkBuilder.master("local").appName("trevas").getOrCreate();
+		}
+		Path path = Path.of(sparkHome, "conf", "spark-defaults.conf");
 		if (Files.exists(path)) {
 			org.apache.spark.util.Utils.loadDefaultSparkProperties(
 					conf, path.normalize().toAbsolutePath().toString());

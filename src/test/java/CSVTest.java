@@ -6,7 +6,6 @@ import fr.insee.trevas.jupyter.Utils;
 import fr.insee.vtl.model.Dataset;
 import java.net.URI;
 import java.nio.file.Path;
-import org.apache.spark.sql.SparkSession;
 import org.junit.jupiter.api.Test;
 
 public class CSVTest {
@@ -36,8 +35,7 @@ public class CSVTest {
 
 	@Test
 	public void readCSVDatasetTest() throws Exception {
-		SparkSession spark =
-				SparkSession.builder().appName("test").master("local").getOrCreate();
+		var spark = SparkUtils.buildSparkSession();
 		Dataset ds1 = SparkUtils.readCSVDataset(spark, "src/test/resources/ds1.csv");
 		assertThat(ds1.getDataPoints().get(1).get("name")).isEqualTo("B");
 		Dataset ds2 =
