@@ -184,6 +184,7 @@
                 <configuration>
                     <extraJvmArguments>
                         --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+                        -Dlog.level=WARN
                     </extraJvmArguments>
                     <programs>
                         <program>

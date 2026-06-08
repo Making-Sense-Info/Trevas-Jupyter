@@ -44,7 +44,6 @@ public class VtlKernel extends BaseKernel {
 	public VtlKernel() throws Exception {
 		spark = SparkUtils.buildSparkSession();
 		engine = SparkUtils.buildSparkEngine(spark);
-		System.out.println("Loaded VTL engine " + engine.getFactory().getEngineName());
 		ScriptEngineFactory factory = engine.getFactory();
 		this.info =
 				new LanguageInfo.Builder(factory.getEngineName())
@@ -244,6 +243,7 @@ public class VtlKernel extends BaseKernel {
 	}
 
 	public static void main(String[] args) throws Exception {
+		configureQuietLogging();
 
 		if (args.length < 1) throw new IllegalArgumentException("Missing connection file argument");
 
@@ -255,8 +255,6 @@ public class VtlKernel extends BaseKernel {
 
 		String contents = new String(Files.readAllBytes(connectionFile));
 
-		JupyterSocket.JUPYTER_LOGGER.setLevel(Level.WARNING);
-
 		KernelConnectionProperties connProps = KernelConnectionProperties.parse(contents);
 		JupyterConnection connection = new JupyterConnection(connProps);
 
@@ -266,6 +264,13 @@ public class VtlKernel extends BaseKernel {
 
 		connection.connect();
 		connection.waitUntilClose();
+	}
+
+	private static void configureQuietLogging() {
+		JupyterSocket.JUPYTER_LOGGER.setLevel(Level.WARNING);
+		System.setProperty("log.level", "WARN");
+		java.util.logging.Logger.getLogger("org.apache").setLevel(Level.WARNING);
+		java.util.logging.Logger.getLogger("org.sparkproject").setLevel(Level.WARNING);
 	}
 
 	private void registerGlobalMethods() throws NoSuchMethodException {
