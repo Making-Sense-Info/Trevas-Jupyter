@@ -12,24 +12,39 @@ jobs:
   check_format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: maven
+      - uses: actions/cache@v5
+        with:
+          path: ~/.m2/wrapper
+          key: maven-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
       - name: Check code formatting thanks to Spotless
         run: ./mvnw spotless:check
   test:
     needs: check_format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Set up Maven Central Repository
-        uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
         with:
           java-version: 17
-          distribution: "adopt"
-      - uses: s4u/maven-settings-action@v3.1.0
+          distribution: temurin
+          cache: maven
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/wrapper
+          key: maven-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+      - uses: s4u/maven-settings-action@v4.0.0
         with:
           githubServer: false
           servers: |
@@ -44,15 +59,20 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Set up Maven Central Repository
-        uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
         with:
           java-version: 17
-          distribution: "adopt"
-      - uses: s4u/maven-settings-action@v3.1.0
+          distribution: temurin
+          cache: maven
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/wrapper
+          key: maven-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+      - uses: s4u/maven-settings-action@v4.0.0
         with:
           githubServer: false
           servers: |
@@ -65,12 +85,12 @@ jobs:
         run: ./mvnw package
   deploy-dockerhub:
     needs: package
-    if: github.repository == 'inseefrlab/trevas-jupyter' &&
+    if: github.repository == 'making-sense-info/trevas-jupyter' &&
       startsWith(github.ref, 'refs/tags/v') &&
       github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Validate tag format and extract version
         id: extract_version
@@ -84,15 +104,21 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: 17
-          distribution: "adopt"
+          distribution: temurin
+          cache: maven
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/wrapper
+          key: maven-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
 
       - name: Set current version
         run: ./mvnw -B versions:set -DnewVersion=${{ steps.extract_version.outputs.VERSION }} -DprocessAllModules -DgenerateBackupPoms=false
 
-      - uses: s4u/maven-settings-action@v3.1.0
+      - uses: s4u/maven-settings-action@v4.0.0
         with:
           githubServer: false
           servers: |

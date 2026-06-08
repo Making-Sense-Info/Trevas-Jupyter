@@ -20,6 +20,7 @@ import io.sdmx.api.io.ReadableDataLocation;
 import io.sdmx.utils.core.io.ReadableDataLocationTmp;
 import org.apache.spark.sql.SparkSession;
 
+import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngineFactory;
 import java.nio.file.Files;
@@ -145,12 +146,21 @@ public class VtlKernel extends BaseKernel {
 				structure);
 	}
 
+	private static void clearWorkflowBindings() {
+		Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+		bindings.keySet().stream()
+				.filter(key -> !key.startsWith("$"))
+				.toList()
+				.forEach(bindings::remove);
+	}
+
 	public static void runSDMXPreview(String path) {
 		ReadableDataLocation rdl = new ReadableDataLocationTmp(path);
 
 		SDMXVTLWorkflow sdmxVtlWorkflow = new SDMXVTLWorkflow(engine, rdl, Map.of());
 
-		Map<String, Dataset> emptyDatasets = sdmxVtlWorkflow.getEmptyDatasets();
+		clearWorkflowBindings();
+		Map<String, Dataset> emptyDatasets = sdmxVtlWorkflow.getMappedEmptyDatasets();
 		engine.getBindings(ScriptContext.ENGINE_SCOPE).putAll(emptyDatasets);
 
 		Map<String, PersistentDataset> results = sdmxVtlWorkflow.run();
@@ -197,6 +207,7 @@ public class VtlKernel extends BaseKernel {
 
 		ReadableDataLocation rdl = new ReadableDataLocationTmp(path);
 		SDMXVTLWorkflow sdmxVtlWorkflow = new SDMXVTLWorkflow(engine, rdl, inputs);
+		clearWorkflowBindings();
 		Map<String, PersistentDataset> results = sdmxVtlWorkflow.run();
 
 		var result = new StringBuilder();
