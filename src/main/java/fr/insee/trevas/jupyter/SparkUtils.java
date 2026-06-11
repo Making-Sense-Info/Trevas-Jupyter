@@ -5,6 +5,7 @@ import fr.insee.vtl.engine.VtlScriptEngine;
 import fr.insee.vtl.spark.SparkDataset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import org.apache.spark.SparkConf;
@@ -49,7 +50,9 @@ public class SparkUtils {
 			}
 		}
 		configureCloudFilesystem(conf);
+		applyS3Environment(conf, System.getenv());
 		SparkSession spark = sparkBuilder.config(conf).getOrCreate();
+		applyS3Environment(spark.sparkContext().hadoopConfiguration(), System.getenv());
 		spark.sparkContext().setLogLevel("WARN");
 		return spark;
 	}
@@ -57,6 +60,99 @@ public class SparkUtils {
 	private static void configureCloudFilesystem(SparkConf conf) {
 		conf.setIfMissing("spark.hadoop.fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
 		conf.setIfMissing("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
+	}
+
+	/**
+	 * Maps standard {@code AWS_*} environment variables to Hadoop S3A settings when present.
+	 *
+	 * <p>No-op when variables are absent (local standalone with filesystem paths only). Used on
+	 * Onyxia and for local development against S3/MinIO when credentials are exported in the shell.
+	 */
+	static void applyS3Environment(SparkConf conf, Map<String, String> env) {
+		if (!hasS3Environment(env)) {
+			return;
+		}
+		setSparkHadoopFromEnv(conf, env, "fs.s3a.access.key", "AWS_ACCESS_KEY_ID");
+		setSparkHadoopFromEnv(conf, env, "fs.s3a.secret.key", "AWS_SECRET_ACCESS_KEY");
+		setSparkHadoopFromEnv(conf, env, "fs.s3a.session.token", "AWS_SESSION_TOKEN");
+		setSparkHadoopFromEnv(conf, env, "fs.s3a.endpoint.region", "AWS_DEFAULT_REGION");
+		applyS3EndpointToSparkConf(conf, env.get("AWS_S3_ENDPOINT"));
+	}
+
+	static void applyS3Environment(org.apache.hadoop.conf.Configuration hconf, Map<String, String> env) {
+		if (!hasS3Environment(env)) {
+			return;
+		}
+		setHadoopFromEnv(hconf, env, "fs.s3a.access.key", "AWS_ACCESS_KEY_ID");
+		setHadoopFromEnv(hconf, env, "fs.s3a.secret.key", "AWS_SECRET_ACCESS_KEY");
+		setHadoopFromEnv(hconf, env, "fs.s3a.session.token", "AWS_SESSION_TOKEN");
+		setHadoopFromEnv(hconf, env, "fs.s3a.endpoint.region", "AWS_DEFAULT_REGION");
+		applyS3EndpointToHadoopConf(hconf, env.get("AWS_S3_ENDPOINT"));
+	}
+
+	static boolean hasS3Environment(Map<String, String> env) {
+		return isSet(env, "AWS_S3_ENDPOINT")
+				|| isSet(env, "AWS_ACCESS_KEY_ID")
+				|| isSet(env, "AWS_SECRET_ACCESS_KEY")
+				|| isSet(env, "AWS_SESSION_TOKEN");
+	}
+
+	private static void applyS3EndpointToSparkConf(SparkConf conf, String endpoint) {
+		if (!isSet(endpoint)) {
+			return;
+		}
+		conf.set("spark.hadoop.fs.s3a.endpoint", endpoint);
+		if (isThirdPartyS3Endpoint(endpoint)) {
+			conf.set("spark.hadoop.fs.s3a.path.style.access", "true");
+		}
+		if (endpoint.startsWith("http://")) {
+			conf.set("spark.hadoop.fs.s3a.connection.ssl.enabled", "false");
+		}
+	}
+
+	private static void applyS3EndpointToHadoopConf(
+			org.apache.hadoop.conf.Configuration hconf, String endpoint) {
+		if (!isSet(endpoint)) {
+			return;
+		}
+		hconf.set("fs.s3a.endpoint", endpoint);
+		if (isThirdPartyS3Endpoint(endpoint)) {
+			hconf.set("fs.s3a.path.style.access", "true");
+		}
+		if (endpoint.startsWith("http://")) {
+			hconf.set("fs.s3a.connection.ssl.enabled", "false");
+		}
+	}
+
+	private static boolean isThirdPartyS3Endpoint(String endpoint) {
+		return !endpoint.contains("amazonaws.com");
+	}
+
+	private static boolean isSet(Map<String, String> env, String key) {
+		return isSet(env.get(key));
+	}
+
+	private static boolean isSet(String value) {
+		return value != null && !value.isBlank();
+	}
+
+	private static void setSparkHadoopFromEnv(
+			SparkConf conf, Map<String, String> env, String hadoopKey, String envKey) {
+		String value = env.get(envKey);
+		if (value != null && !value.isBlank()) {
+			conf.set("spark.hadoop." + hadoopKey, value);
+		}
+	}
+
+	private static void setHadoopFromEnv(
+			org.apache.hadoop.conf.Configuration hconf,
+			Map<String, String> env,
+			String hadoopKey,
+			String envKey) {
+		String value = env.get(envKey);
+		if (value != null && !value.isBlank()) {
+			hconf.set(hadoopKey, value);
+		}
 	}
 
 	public static SparkDataset readParquetDataset(SparkSession spark, String path)

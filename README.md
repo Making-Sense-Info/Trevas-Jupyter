@@ -58,7 +58,21 @@ CSV options (`delimiter`, `quote`, `header`, …) can still be appended as URL q
 
 `loadCSV("s3://my-bucket/data.csv?delimiter=%7C")`
 
-For `s3://` and `s3a://` URLs, credentials must be available to the **Trevas JVM process** (not only the Python kernel), for example via environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`) or Spark/Hadoop configuration (`fs.s3a.*`) provided by the platform (e.g. Onyxia).
+For `s3://` and `s3a://` URLs, credentials must be available to the **Trevas JVM process** (not only the Python kernel).
+
+**Onyxia:** S3 credentials and endpoint are injected automatically into the container; the Trevas kernel maps them to `fs.s3a.*`.
+
+**Local standalone:** no `AWS_*` variables are required. Local paths (`./file.csv`, `/path/to/file.csv`) work as before. To access S3/MinIO locally, export the same variables before starting Jupyter:
+
+```bash
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_SESSION_TOKEN=...          # if needed
+export AWS_S3_ENDPOINT=http://localhost:9000   # MinIO / non-AWS only
+export AWS_DEFAULT_REGION=us-east-1
+```
+
+When `AWS_S3_ENDPOINT` points to a MinIO-compatible store, path-style access is enabled automatically. Real AWS endpoints (`*.amazonaws.com`) keep the default virtual-host style.
 
 ### (1) loadCSV
 
