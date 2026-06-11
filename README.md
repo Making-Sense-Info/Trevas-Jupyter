@@ -50,7 +50,9 @@ Custom functions have been introduced into the Trevas engine.
 | Local path (relative) | `./data/file.csv` | Resolved from the current working directory of the Trevas kernel process |
 | Local path (absolute) | `/home/jovyan/work/file.csv` | Typical path inside the Jupyter container |
 | HTTPS | `https://example.com/data/file.csv` | Passed through to Spark |
-| S3 | `s3://my-bucket/path/file.csv` | Requires AWS/S3 credentials in the kernel environment (see below) |
+| S3 | `s3://my-bucket/path/file.csv` | Mapped internally to `s3a://` (Hadoop S3A). Requires AWS/S3 credentials in the kernel environment (see below) |
+
+`loadCSV`, `writeCSV`, `loadParquet`, `writeParquet` and `loadSas` all resolve remote locations the same way. You can write `s3://…` in VTL; it is converted to `s3a://…` before calling Spark/Hadoop.
 
 CSV options (`delimiter`, `quote`, `header`, …) can still be appended as URL query parameters on any of these formats (values must be URL-encoded), for example:
 

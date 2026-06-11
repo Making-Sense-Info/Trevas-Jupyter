@@ -36,7 +36,9 @@ public class CSVTest {
 	@Test
 	void resolveDataLocationKeepsRemoteSchemes() {
 		assertThat(Utils.resolveDataLocation("s3://my-bucket/path/file.csv"))
-				.isEqualTo("s3://my-bucket/path/file.csv");
+				.isEqualTo("s3a://my-bucket/path/file.csv");
+		assertThat(Utils.resolveDataLocation("s3://l4tu7k/public/nyc_taxi.sas7bdat"))
+				.isEqualTo("s3a://l4tu7k/public/nyc_taxi.sas7bdat");
 		assertThat(Utils.resolveDataLocation("s3a://my-bucket/path/file.csv?delimiter=%2C"))
 				.isEqualTo("s3a://my-bucket/path/file.csv");
 		assertThat(Utils.resolveDataLocation("https://example.com/data/file.csv"))

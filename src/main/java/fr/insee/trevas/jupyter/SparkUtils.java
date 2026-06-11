@@ -48,16 +48,22 @@ public class SparkUtils {
 				sparkBuilder.master("local");
 			}
 		}
+		configureCloudFilesystem(conf);
 		SparkSession spark = sparkBuilder.config(conf).getOrCreate();
 		spark.sparkContext().setLogLevel("WARN");
 		return spark;
+	}
+
+	private static void configureCloudFilesystem(SparkConf conf) {
+		conf.setIfMissing("spark.hadoop.fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
+		conf.setIfMissing("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
 	}
 
 	public static SparkDataset readParquetDataset(SparkSession spark, String path)
 			throws Exception {
 		Dataset<Row> dataset;
 		try {
-			dataset = spark.read().parquet(path);
+			dataset = spark.read().parquet(Utils.resolveDataLocation(path));
 		} catch (Exception e) {
 			throw new Exception("Bad format", e);
 		}
@@ -67,7 +73,10 @@ public class SparkUtils {
 	public static SparkDataset readSasDataset(SparkSession spark, String path) throws Exception {
 		Dataset<Row> dataset;
 		try {
-			dataset = spark.read().format("com.github.saurfang.sas.spark").load(path);
+			dataset =
+					spark.read()
+							.format("com.github.saurfang.sas.spark")
+							.load(Utils.resolveDataLocation(path));
 		} catch (Exception e) {
 			throw new Exception(e);
 		}
@@ -94,7 +103,7 @@ public class SparkUtils {
 
 	public static void writeParquetDataset(String location, SparkDataset dataset) {
 		org.apache.spark.sql.Dataset<Row> sparkDataset = dataset.getSparkDataset();
-		sparkDataset.write().mode(SaveMode.Overwrite).parquet(location);
+		sparkDataset.write().mode(SaveMode.Overwrite).parquet(Utils.resolveDataLocation(location));
 	}
 
 	public static void writeCSVDataset(String location, SparkDataset dataset) {

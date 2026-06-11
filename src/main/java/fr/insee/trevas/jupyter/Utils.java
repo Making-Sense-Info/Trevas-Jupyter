@@ -61,21 +61,40 @@ public class Utils {
 	}
 
 	/**
-	 * Resolves a data location for Spark readers/writers. Local {@code file} paths are normalized
-	 * to an absolute filesystem path; remote schemes ({@code s3://}, {@code s3a://}, {@code
-	 * http(s)://}, etc.) are passed through unchanged.
+	 * Resolves a data location for Spark/Hadoop readers/writers. Local {@code file} paths are
+	 * normalized to an absolute filesystem path. {@code s3://} URLs are mapped to {@code s3a://}
+	 * because Hadoop only supports the S3A filesystem. Other remote schemes are passed through
+	 * unchanged.
 	 */
 	public static String resolveDataLocation(String value) {
 		return resolveDataLocation(uri(value));
 	}
 
 	public static String resolveDataLocation(URI uri) {
-		URI location = strip(uri);
+		URI location = toHadoopLocation(strip(uri));
 		String scheme = location.getScheme();
 		if (scheme == null || "file".equals(scheme)) {
 			return Path.of(location).normalize().toAbsolutePath().toString();
 		}
 		return location.toString();
+	}
+
+	static URI toHadoopLocation(URI location) {
+		if (!"s3".equals(location.getScheme())) {
+			return location;
+		}
+		try {
+			return new URI(
+					"s3a",
+					location.getUserInfo(),
+					location.getHost(),
+					location.getPort(),
+					location.getPath(),
+					null,
+					null);
+		} catch (URISyntaxException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
