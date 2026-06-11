@@ -16,6 +16,7 @@ import io.github.spencerpark.jupyter.kernel.KernelConnectionProperties;
 import io.github.spencerpark.jupyter.kernel.LanguageInfo;
 import io.github.spencerpark.jupyter.kernel.ReplacementOptions;
 import io.github.spencerpark.jupyter.kernel.display.DisplayData;
+import io.github.spencerpark.jupyter.kernel.display.mime.MIMEType;
 import io.sdmx.api.io.ReadableDataLocation;
 import io.sdmx.utils.core.io.ReadableDataLocationTmp;
 import org.apache.spark.sql.SparkSession;
@@ -81,30 +82,40 @@ public class VtlKernel extends BaseKernel {
 	}
 
 	public static SparkDataset loadParquet(String path) throws Exception {
-		return SparkUtils.readParquetDataset(spark, path);
+		SparkDataset dataset = SparkUtils.readParquetDataset(spark, path);
+		notifyLoad(dataset, "parquet", path);
+		return dataset;
 	}
 
 	public static SparkDataset loadCSV(String path) throws Exception {
-		return SparkUtils.readCSVDataset(spark, path);
+		SparkDataset dataset = SparkUtils.readCSVDataset(spark, path);
+		notifyLoad(dataset, "csv", path);
+		return dataset;
 	}
 
 	public static SparkDataset loadSas(String path) throws Exception {
-		return SparkUtils.readSasDataset(spark, path);
+		SparkDataset dataset = SparkUtils.readSasDataset(spark, path);
+		notifyLoad(dataset, "sas", path);
+		return dataset;
 	}
 
 	public static String writeParquet(String path, Dataset ds) {
 		SparkUtils.writeParquetDataset(path, asSparkDataset(ds));
-		return "Dataset written: '" + path + "'";
+		notify("Dataset written to '" + path + "' (parquet)");
+		return "Dataset written to '" + path + "' (parquet)";
 	}
 
 	public static String writeCSV(String path, Dataset ds) {
 		SparkUtils.writeCSVDataset(path, asSparkDataset(ds));
-		return "Dataset written: '" + path + "'";
+		notify("Dataset written to '" + path + "' (csv)");
+		return "Dataset written to '" + path + "' (csv)";
 	}
 
-	public static String getSize(Dataset ds) {
+	public static long getSize(Dataset ds) {
 		SparkDataset sparkDataset = asSparkDataset(ds);
-		return "Dataset size: " + sparkDataset.getDataPoints().size();
+		long rowCount = sparkDataset.getDataPoints().size();
+		notify("Dataset size: " + rowCount);
+		return rowCount;
 	}
 
 	public static Object show(Object o) throws ClassNotFoundException {
@@ -131,18 +142,24 @@ public class VtlKernel extends BaseKernel {
 
 	public static Dataset loadSDMXEmptySource(String path, String id) {
 		Structured.DataStructure structure = TrevasSDMXUtils.buildStructureFromSDMX3(path, id);
-		return new InMemoryDataset(List.of(List.of()), structure);
+		Dataset dataset = new InMemoryDataset(List.of(List.of()), structure);
+		notifySdmxLoad(dataset, path, "empty SDMX source '" + id + "'");
+		return dataset;
 	}
 
 	public static Dataset loadSDMXSource(String path, String id, String dataPath) {
 		Structured.DataStructure structure = TrevasSDMXUtils.buildStructureFromSDMX3(path, id);
-		return new SparkDataset(
-				spark.read()
-						.option("header", "true")
-						.option("delimiter", ";")
-						.option("quote", "\"")
-						.csv(dataPath),
-				structure);
+		Dataset dataset =
+				new SparkDataset(
+						spark.read()
+								.option("header", "true")
+								.option("delimiter", ";")
+								.option("quote", "\"")
+								.csv(dataPath),
+						structure);
+		notifySdmxLoad(
+				dataset, dataPath, "SDMX source '" + id + "', structure from '" + path + "'");
+		return dataset;
 	}
 
 	private static void clearWorkflowBindings() {
@@ -163,6 +180,8 @@ public class VtlKernel extends BaseKernel {
 		engine.getBindings(ScriptContext.ENGINE_SCOPE).putAll(emptyDatasets);
 
 		Map<String, PersistentDataset> results = sdmxVtlWorkflow.run();
+
+		notify("SDMX preview completed (" + results.size() + " dataset(s))");
 
 		var result = new StringBuilder();
 
@@ -208,6 +227,8 @@ public class VtlKernel extends BaseKernel {
 		SDMXVTLWorkflow sdmxVtlWorkflow = new SDMXVTLWorkflow(engine, rdl, inputs);
 		clearWorkflowBindings();
 		Map<String, PersistentDataset> results = sdmxVtlWorkflow.run();
+
+		notify("SDMX workflow completed (" + results.size() + " dataset(s))");
 
 		var result = new StringBuilder();
 
@@ -266,6 +287,29 @@ public class VtlKernel extends BaseKernel {
 		connection.waitUntilClose();
 	}
 
+	private static void notify(String message) {
+		if (displayData.hasDataForType(MIMEType.TEXT_PLAIN)) {
+			String existing = (String) displayData.getData(MIMEType.TEXT_PLAIN);
+			displayData.putText(existing + "\n" + message);
+		} else {
+			displayData.putText(message);
+		}
+	}
+
+	private static void notifyLoad(Dataset dataset, String format, String location) {
+		String variable = LoadAssignmentContext.pollTarget().orElse(null);
+		notify(
+				LoadAssignmentContext.formatLoadMessage(
+						variable, location, format, dataset.getDataStructure().size()));
+	}
+
+	private static void notifySdmxLoad(Dataset dataset, String location, String details) {
+		String variable = LoadAssignmentContext.pollTarget().orElse(null);
+		notify(
+				LoadAssignmentContext.formatSdmxLoadMessage(
+						variable, location, details, dataset.getDataStructure().size()));
+	}
+
 	private static void configureQuietLogging() {
 		JupyterSocket.JUPYTER_LOGGER.setLevel(Level.WARNING);
 		System.setProperty("log.level", "WARN");
@@ -290,6 +334,8 @@ public class VtlKernel extends BaseKernel {
 				"showMetadata", VtlKernel.class.getMethod("showMetadata", Object.class));
 		this.engine.registerGlobalMethod(
 				"size", VtlKernel.class.getMethod("getSize", Dataset.class));
+		this.engine.registerGlobalMethod(
+				"getSize", VtlKernel.class.getMethod("getSize", Dataset.class));
 
 		// SDMX
 		this.engine.registerGlobalMethod(
@@ -314,8 +360,13 @@ public class VtlKernel extends BaseKernel {
 	@Override
 	public synchronized DisplayData eval(String expr) throws Exception {
 		displayData = new DisplayData();
-		this.engine.eval(expr);
-		return displayData;
+		try {
+			LoadAssignmentContext.prepare(expr);
+			this.engine.eval(expr);
+			return displayData;
+		} finally {
+			LoadAssignmentContext.clear();
+		}
 	}
 
 	@Override
