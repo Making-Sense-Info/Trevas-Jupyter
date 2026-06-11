@@ -119,15 +119,16 @@ public class VtlKernel extends BaseKernel {
 	}
 
 	public static Object show(Object o) throws ClassNotFoundException {
-		if (o instanceof Dataset) {
-			showDataset((SparkDataset) o);
+		if (o instanceof Dataset dataset) {
+			showDataset(asSparkDataset(dataset));
 		} else {
 			displayData.putText(o.toString());
 		}
+		notifyCalculated();
 		return o;
 	}
 
-	private static void showDataset(Dataset dataset) throws ClassNotFoundException {
+	private static void showDataset(SparkDataset dataset) throws ClassNotFoundException {
 		displayData.putHTML(DatasetUtils.datasetToDisplay(dataset));
 	}
 
@@ -137,6 +138,7 @@ public class VtlKernel extends BaseKernel {
 		} else {
 			displayData.putText(o.toString());
 		}
+		notifyCalculated();
 		return o;
 	}
 
@@ -303,6 +305,10 @@ public class VtlKernel extends BaseKernel {
 						variable, location, format, dataset.getDataStructure().size()));
 	}
 
+	private static void notifyCalculated() {
+		LoadAssignmentContext.pollTarget().ifPresent(var -> notify(LoadAssignmentContext.formatCalculatedMessage(var)));
+	}
+
 	private static void notifySdmxLoad(Dataset dataset, String location, String details) {
 		String variable = LoadAssignmentContext.pollTarget().orElse(null);
 		notify(
@@ -361,6 +367,7 @@ public class VtlKernel extends BaseKernel {
 	public synchronized DisplayData eval(String expr) throws Exception {
 		displayData = new DisplayData();
 		try {
+			VtlAssignmentTargets.clearFrom(engine.getBindings(ScriptContext.ENGINE_SCOPE), expr);
 			LoadAssignmentContext.prepare(expr);
 			this.engine.eval(expr);
 			return displayData;

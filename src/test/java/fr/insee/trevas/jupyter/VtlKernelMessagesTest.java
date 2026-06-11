@@ -68,6 +68,22 @@ class VtlKernelMessagesTest {
 	}
 
 	@Test
+	void showAndShowMetadataDisplayCalculatedMessages() throws Exception {
+		DisplayData output =
+				kernel.eval(
+						"taxi <- loadCSV(\"src/test/resources/ds1.csv\"); "
+								+ "m := showMetadata(taxi); "
+								+ "d := show(taxi);");
+
+		assertThat(text(output))
+				.isEqualTo(
+						"Dataset 'taxi' loaded from 'src/test/resources/ds1.csv' (csv, 2 columns)\n"
+								+ "m calculated\n"
+								+ "d calculated");
+		assertThat(output.hasDataForType(MIMEType.TEXT_HTML)).isTrue();
+	}
+
+	@Test
 	void getSizeShowsConfirmation() throws Exception {
 		DisplayData output =
 				kernel.eval(
