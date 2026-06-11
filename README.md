@@ -41,6 +41,23 @@ Custom functions have been introduced into the Trevas engine.
 | getRulesetsVTL        | String sdmxMesUrl                                       | String        | Display VTL rulesets defined in the SDMX Message file                                   |
 | size                  | Dataset ds                                              | String        | Display size of a given dataset                                                         |
 
+### Data locations
+
+`loadCSV`, `writeCSV`, `loadParquet` and `writeParquet` accept the following location formats:
+
+| Format | Example | Notes |
+| ------ | ------- | ----- |
+| Local path (relative) | `./data/file.csv` | Resolved from the current working directory of the Trevas kernel process |
+| Local path (absolute) | `/home/jovyan/work/file.csv` | Typical path inside the Jupyter container |
+| HTTPS | `https://example.com/data/file.csv` | Passed through to Spark |
+| S3 | `s3://my-bucket/path/file.csv` | Requires AWS/S3 credentials in the kernel environment (see below) |
+
+CSV options (`delimiter`, `quote`, `header`, …) can still be appended as URL query parameters on any of these formats (values must be URL-encoded), for example:
+
+`loadCSV("s3://my-bucket/data.csv?delimiter=%7C")`
+
+For `s3://` and `s3a://` URLs, credentials must be available to the **Trevas JVM process** (not only the Python kernel), for example via environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`) or Spark/Hadoop configuration (`fs.s3a.*`) provided by the platform (e.g. Onyxia).
+
 ### (1) loadCSV
 
 Default option values:
@@ -55,7 +72,11 @@ Any CSV option can be defined or overridden thanks to url parameters (values hav
 
 For instance, to read a CSV content where delimiter is `|` and quote is `'`:
 
-`loadCSV(...?delimiter=%7C&quote=%27)`
+`loadCSV("s3://my-bucket/data.csv?delimiter=%7C&quote=%27")`
+
+Or from a local file in the container:
+
+`loadCSV("./data/file.csv")`
 
 ### (2) loadSDMXSource
 
@@ -75,7 +96,8 @@ Any CSV option can be defined or overridden thanks to url parameters (values hav
 
 For instance, to write a CSV with a content delimited by `|` and quoted by `'`:
 
-`writeCSV(...?delimiter=%7C&quote=%27)`
+- `writeCSV(...?delimiter=%7C&quote=%27)`
+- `writeCSV("s3://my-bucket/out.csv?delimiter=%7C&quote=%27", ds)`
 
 ### (4) runSDMX
 

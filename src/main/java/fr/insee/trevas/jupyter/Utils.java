@@ -61,6 +61,24 @@ public class Utils {
 	}
 
 	/**
+	 * Resolves a data location for Spark readers/writers. Local {@code file} paths are normalized
+	 * to an absolute filesystem path; remote schemes ({@code s3://}, {@code s3a://}, {@code
+	 * http(s)://}, etc.) are passed through unchanged.
+	 */
+	public static String resolveDataLocation(String value) {
+		return resolveDataLocation(uri(value));
+	}
+
+	public static String resolveDataLocation(URI uri) {
+		URI location = strip(uri);
+		String scheme = location.getScheme();
+		if (scheme == null || "file".equals(scheme)) {
+			return Path.of(location).normalize().toAbsolutePath().toString();
+		}
+		return location.toString();
+	}
+
+	/**
 	 * Parse value to URI. If the value has no scheme, it is interpreted as a local path.
 	 *
 	 * <p>Ex: /foo/bar becomes file:///foo/bar

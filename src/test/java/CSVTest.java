@@ -34,6 +34,22 @@ public class CSVTest {
 	}
 
 	@Test
+	void resolveDataLocationKeepsRemoteSchemes() {
+		assertThat(Utils.resolveDataLocation("s3://my-bucket/path/file.csv"))
+				.isEqualTo("s3://my-bucket/path/file.csv");
+		assertThat(Utils.resolveDataLocation("s3a://my-bucket/path/file.csv?delimiter=%2C"))
+				.isEqualTo("s3a://my-bucket/path/file.csv");
+		assertThat(Utils.resolveDataLocation("https://example.com/data/file.csv"))
+				.isEqualTo("https://example.com/data/file.csv");
+	}
+
+	@Test
+	void resolveDataLocationNormalizesLocalPaths() {
+		Path local = Path.of("src/test/resources/ds1.csv").toAbsolutePath().normalize();
+		assertThat(Utils.resolveDataLocation("src/test/resources/ds1.csv")).isEqualTo(local.toString());
+	}
+
+	@Test
 	public void readCSVDatasetTest() throws Exception {
 		var spark = SparkUtils.buildSparkSession();
 		Dataset ds1 = SparkUtils.readCSVDataset(spark, "src/test/resources/ds1.csv");

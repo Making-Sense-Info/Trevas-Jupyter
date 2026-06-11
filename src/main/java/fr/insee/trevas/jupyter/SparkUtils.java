@@ -85,7 +85,7 @@ public class SparkUtils {
 							.option("quote", params.getValue("quote").orElse("\""))
 							.option("header", params.getValue("header").orElse("true"))
 							.options(params.flatten())
-							.csv(Path.of(Utils.strip(uri)).normalize().toAbsolutePath().toString());
+							.csv(Utils.resolveDataLocation(uri));
 		} catch (Exception e) {
 			throw new Exception(e);
 		}
@@ -108,6 +108,6 @@ public class SparkUtils {
 				.option("header", params.getValue("header").orElse("true"))
 				.options(params.flatten())
 				.mode(SaveMode.Overwrite)
-				.csv(Path.of(Utils.strip(uri)).normalize().toAbsolutePath().toString());
+				.csv(Utils.resolveDataLocation(uri));
 	}
 }
