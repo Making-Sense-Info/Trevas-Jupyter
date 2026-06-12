@@ -16,9 +16,14 @@ TODO
 ### With Docker
 
 ```shell
-docker build . -t jupyter_vtl
+mvn package -DskipTests
+docker buildx build --platform linux/amd64 -t jupyter_vtl --load .
 docker run -p 8888:8888 jupyter_vtl
 ```
+
+The image includes **Elyra 4.1.1** (pipelines) and **[Arbalister](https://github.com/QuantStack/Arbalister)** 0.2.1 (double-click Parquet/CSV/Avro files in the file browser to view them as tables). JupyterLab is upgraded to **4.5.x** during the image build because Arbalister requires `>= 4.5.0` (the Onyxia base image ships 4.4.x).
+
+**Parquet viewer troubleshooting:** if opening a `.parquet` file shows *"is not UTF-8 encoded"*, JupyterLab is using the text editor instead of Arbalister — usually because JupyterLab is still on 4.4.x. After `writeParquet`, open a `part-*.parquet` file inside the `output/` directory (Spark writes a folder, not a single file). On a running container (as root): `pip install "jupyterlab>=4.5.0,<5" arbalister==0.2.1` then restart JupyterLab.
 
 ## Custom functions
 

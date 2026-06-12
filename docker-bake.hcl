@@ -18,8 +18,16 @@ variable "TAG" {
   default = "latest"
 }
 
+variable "JUPYTERLAB_VERSION" {
+  default = "4.5.8"
+}
+
 variable "ELYRA_VERSION" {
   default = "4.1.1"
+}
+
+variable "ARBALISTER_VERSION" {
+  default = "0.2.1"
 }
 
 target "trevas-jupyter" {
@@ -28,6 +36,8 @@ target "trevas-jupyter" {
   platforms = ["linux/amd64"]
   tags = ["${REGISTRY}/trevas-jupyter:${TAG}"]
   args = {
-    ELYRA_VERSION = "${ELYRA_VERSION}"
+    JUPYTERLAB_VERSION = "${JUPYTERLAB_VERSION}"
+    ELYRA_VERSION      = "${ELYRA_VERSION}"
+    ARBALISTER_VERSION = "${ARBALISTER_VERSION}"
   }
 }

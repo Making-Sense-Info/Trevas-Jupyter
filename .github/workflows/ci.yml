@@ -162,7 +162,9 @@ jobs:
             makingsenseinfo/trevas-jupyter:latest
           labels: ${{ steps.docker_meta.outputs.labels }}
           build-args: |
+            JUPYTERLAB_VERSION=4.5.8
             ELYRA_VERSION=4.1.1
+            ARBALISTER_VERSION=0.2.1
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
