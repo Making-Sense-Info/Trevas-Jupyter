@@ -72,7 +72,7 @@ class VtlKernelCellRerunTest {
 		assertThat(text(output)).isEqualTo("m calculated");
 		// other and taxi still available for use in a follow-up cell
 		DisplayData followUp = kernel.eval("d := show(taxi); size := other;");
-		assertThat(text(followUp)).isEqualTo("d calculated");
+		assertThat(text(followUp)).isEqualTo("d calculated\n" + "size calculated");
 	}
 
 	@Test
@@ -84,6 +84,16 @@ class VtlKernelCellRerunTest {
 		DisplayData output = kernel.eval("m := showMetadata(taxi); d := show(taxi);");
 
 		assertThat(text(output)).isEqualTo("m calculated\n" + "d calculated");
+	}
+
+	@Test
+	void pureVtlAssignmentsShowCalculatedMessages() throws Exception {
+		kernel.eval("taxi <- loadCSV(\"" + DS1 + "\");");
+
+		DisplayData output =
+				kernel.eval("taxi_meta := taxi [keep name]; " + "n := 1 + 2;");
+
+		assertThat(text(output)).isEqualTo("taxi_meta calculated\n" + "n calculated");
 	}
 
 	@Test

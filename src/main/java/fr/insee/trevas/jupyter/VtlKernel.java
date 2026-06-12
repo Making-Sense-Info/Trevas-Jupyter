@@ -330,6 +330,21 @@ public class VtlKernel extends BaseKernel {
 						variable, location, details, dataset.getDataStructure().size()));
 	}
 
+	/**
+	 * Emits "{@code var calculated}" for top-level VTL assignments that did not already produce a
+	 * kernel feedback message (load, show, write, etc.).
+	 */
+	private static void notifyTopLevelAssignments(String expression) {
+		var kernelFeedbackVariables =
+				VtlAssignmentTargets.feedbackIn(expression).stream()
+						.map(VtlAssignmentTargets.FeedbackTarget::variable)
+						.collect(Collectors.toSet());
+		VtlAssignmentTargets.topLevelIn(expression).stream()
+				.filter(variable -> !kernelFeedbackVariables.contains(variable))
+				.map(LoadAssignmentContext::formatCalculatedMessage)
+				.forEach(VtlKernel::notify);
+	}
+
 	private static void configureQuietLogging() {
 		JupyterSocket.JUPYTER_LOGGER.setLevel(Level.WARNING);
 		System.setProperty("log.level", "WARN");
@@ -384,6 +399,7 @@ public class VtlKernel extends BaseKernel {
 			VtlAssignmentTargets.clearFrom(engine.getBindings(ScriptContext.ENGINE_SCOPE), expr);
 			LoadAssignmentContext.prepare(expr);
 			this.engine.eval(expr);
+			notifyTopLevelAssignments(expr);
 			return displayData;
 		} finally {
 			LoadAssignmentContext.clear();

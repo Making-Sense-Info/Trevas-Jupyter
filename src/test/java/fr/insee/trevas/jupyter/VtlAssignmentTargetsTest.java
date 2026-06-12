@@ -12,11 +12,20 @@ import static org.assertj.core.api.Assertions.tuple;
 class VtlAssignmentTargetsTest {
 
 	@Test
-	void allInExtractsTemporaryAndPersistentAssignments() {
+	void topLevelInExtractsStatementAssignments() {
 		assertThat(
-						VtlAssignmentTargets.allIn(
+						VtlAssignmentTargets.topLevelIn(
 								"taxi <- loadCSV(\"a.csv\"); m := showMetadata(taxi); x := 1 + 2;"))
 				.containsExactly("taxi", "m", "x");
+	}
+
+	@Test
+	void topLevelInIgnoresAssignmentsInsideCalc() {
+		assertThat(
+						VtlAssignmentTargets.topLevelIn(
+								"taxi_meta := taxi [calc identifier vendor_id := vendor_id] [keep total_amount]; "
+										+ "ratio <- taxi_meta;"))
+				.containsExactly("taxi_meta", "ratio");
 	}
 
 	@Test

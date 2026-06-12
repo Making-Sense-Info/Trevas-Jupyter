@@ -10,8 +10,8 @@ import java.util.regex.Pattern;
 /** Detects VTL assignment targets ({@code var := ...} or {@code var <- ...}) in notebook cells. */
 final class VtlAssignmentTargets {
 
-	private static final Pattern TARGET =
-			Pattern.compile("([A-Za-z_][A-Za-z0-9_]*)\\s*(?::=|<-)");
+	private static final Pattern TOP_LEVEL_TARGET =
+			Pattern.compile("^([A-Za-z_][A-Za-z0-9_]*)\\s*(?::=|<-)");
 
 	private static final Pattern FEEDBACK_TARGET =
 			Pattern.compile(
@@ -22,8 +22,20 @@ final class VtlAssignmentTargets {
 
 	private VtlAssignmentTargets() {}
 
-	static List<String> allIn(String expression) {
-		return match(expression, TARGET, 1);
+	/** Top-level statement assignments only (ignores {@code :=} inside {@code [calc ...]} blocks). */
+	static List<String> topLevelIn(String expression) {
+		List<String> targets = new ArrayList<>();
+		for (String part : expression.split(";")) {
+			String statement = part.trim();
+			if (statement.isEmpty()) {
+				continue;
+			}
+			Matcher matcher = TOP_LEVEL_TARGET.matcher(statement);
+			if (matcher.find()) {
+				targets.add(matcher.group(1));
+			}
+		}
+		return targets;
 	}
 
 	static List<FeedbackTarget> feedbackIn(String expression) {
@@ -40,16 +52,7 @@ final class VtlAssignmentTargets {
 	 * rejecting reassignment of existing variables.
 	 */
 	static void clearFrom(Bindings bindings, String expression) {
-		allIn(expression).forEach(bindings::remove);
-	}
-
-	private static List<String> match(String expression, Pattern pattern, int group) {
-		List<String> targets = new ArrayList<>();
-		Matcher matcher = pattern.matcher(expression);
-		while (matcher.find()) {
-			targets.add(matcher.group(group));
-		}
-		return targets;
+		topLevelIn(expression).forEach(bindings::remove);
 	}
 
 	private static String normalizeOperation(String operation) {
