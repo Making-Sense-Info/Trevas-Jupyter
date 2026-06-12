@@ -1,7 +1,9 @@
-FROM --platform=linux/amd64 inseefrlab/onyxia-jupyter-pyspark:py3.13.8-spark3.5.7-2025.11.03
+# Onyxia Spark image (linux/amd64). For Apple Silicon local builds use:
+#   docker buildx build --platform linux/amd64 ...
+FROM inseefrlab/onyxia-jupyter-pyspark:py3.13.8-spark3.5.7-2025.11.03
 
 # Allows the kernel to load the Spark and Hadoop config.
-ENV CLASSPATH_PREFIX "/opt/hadoop/etc/hadoop:/opt/spark/conf"
+ENV CLASSPATH_PREFIX="/opt/hadoop/etc/hadoop:/opt/spark/conf"
 
 COPY target/appassembler/ /usr/local/share/jupyter/kernels/trevas/
 COPY kernel.json /usr/local/share/jupyter/kernels/trevas/

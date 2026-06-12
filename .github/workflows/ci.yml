@@ -155,11 +155,14 @@ jobs:
         with:
           context: .
           file: Dockerfile
+          platforms: linux/amd64
           push: true
           tags: |
             makingsenseinfo/trevas-jupyter:${{ steps.extract_version.outputs.VERSION }}
             makingsenseinfo/trevas-jupyter:latest
           labels: ${{ steps.docker_meta.outputs.labels }}
+          build-args: |
+            ELYRA_VERSION=4.1.1
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
