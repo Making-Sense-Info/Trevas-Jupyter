@@ -13,21 +13,26 @@ final class VtlAssignmentTargets {
 	private static final Pattern TARGET =
 			Pattern.compile("([A-Za-z_][A-Za-z0-9_]*)\\s*(?::=|<-)");
 
-	private static final Pattern KERNEL_FEEDBACK_TARGET =
+	private static final Pattern FEEDBACK_TARGET =
 			Pattern.compile(
 					"([A-Za-z_][A-Za-z0-9_]*)\\s*(?::=|<-)\\s*"
-							+ "(load(?:Parquet|CSV|Sas|SDMX(?:EmptySource|Source))"
-							+ "|showMetadata|show)\\s*\\(",
+							+ "(loadParquet|loadCSV|loadSas|loadSDMXEmptySource|loadSDMXSource"
+							+ "|writeParquet|writeCSV|showMetadata|show|getSize|size)\\s*\\(",
 					Pattern.CASE_INSENSITIVE);
 
 	private VtlAssignmentTargets() {}
 
 	static List<String> allIn(String expression) {
-		return match(expression, TARGET);
+		return match(expression, TARGET, 1);
 	}
 
-	static List<String> withKernelFeedbackIn(String expression) {
-		return match(expression, KERNEL_FEEDBACK_TARGET);
+	static List<FeedbackTarget> feedbackIn(String expression) {
+		List<FeedbackTarget> targets = new ArrayList<>();
+		Matcher matcher = FEEDBACK_TARGET.matcher(expression);
+		while (matcher.find()) {
+			targets.add(new FeedbackTarget(matcher.group(1), normalizeOperation(matcher.group(2))));
+		}
+		return targets;
 	}
 
 	/**
@@ -38,12 +43,18 @@ final class VtlAssignmentTargets {
 		allIn(expression).forEach(bindings::remove);
 	}
 
-	private static List<String> match(String expression, Pattern pattern) {
+	private static List<String> match(String expression, Pattern pattern, int group) {
 		List<String> targets = new ArrayList<>();
 		Matcher matcher = pattern.matcher(expression);
 		while (matcher.find()) {
-			targets.add(matcher.group(1));
+			targets.add(matcher.group(group));
 		}
 		return targets;
 	}
+
+	private static String normalizeOperation(String operation) {
+		return "size".equalsIgnoreCase(operation) ? "getSize" : operation;
+	}
+
+	record FeedbackTarget(String variable, String operation) {}
 }

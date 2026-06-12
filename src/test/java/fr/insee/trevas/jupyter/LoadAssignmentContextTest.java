@@ -1,11 +1,28 @@
 /* (C)2024 */
 package fr.insee.trevas.jupyter;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class LoadAssignmentContextTest {
+
+	@AfterEach
+	void cleanup() {
+		LoadAssignmentContext.clear();
+	}
+
+	@Test
+	void pollForOnlyConsumesMatchingOperation() {
+		LoadAssignmentContext.prepare(
+				"m := showMetadata(taxi); d := show(taxi); taxi := loadParquet(\"out\");");
+
+		assertThat(LoadAssignmentContext.pollFor("showMetadata")).contains("m");
+		assertThat(LoadAssignmentContext.pollFor("loadParquet")).isEmpty();
+		assertThat(LoadAssignmentContext.pollFor("show")).contains("d");
+		assertThat(LoadAssignmentContext.pollFor("loadParquet")).contains("taxi");
+	}
 
 	@Test
 	void loadMessageWithoutVariableNameUsesGenericFormat() {
@@ -16,27 +33,15 @@ class LoadAssignmentContextTest {
 	}
 
 	@Test
-	void loadMessageWithVariableNameIncludesName() {
+	void writeMessageWithVariableNameIncludesName() {
 		assertThat(
-						LoadAssignmentContext.formatLoadMessage(
-								"ds", "src/test/resources/ds1.csv", "csv", 2))
-				.isEqualTo("Dataset 'ds' loaded from 'src/test/resources/ds1.csv' (csv, 2 columns)");
+						LoadAssignmentContext.formatWriteMessage(
+								"w", "output", "parquet"))
+				.isEqualTo("Dataset 'w' written to 'output' (parquet)");
 	}
 
 	@Test
 	void formatCalculatedMessageUsesVariableName() {
 		assertThat(LoadAssignmentContext.formatCalculatedMessage("m")).isEqualTo("m calculated");
-	}
-
-	@Test
-	void formatSdmxLoadMessageWithAndWithoutVariableName() {
-		assertThat(
-						LoadAssignmentContext.formatSdmxLoadMessage(
-								null, "msg.xml", "sdmx", 3))
-				.isEqualTo("Dataset loaded from 'msg.xml' (sdmx, 3 components)");
-		assertThat(
-						LoadAssignmentContext.formatSdmxLoadMessage(
-								"ds", "msg.xml", "sdmx", 3))
-				.isEqualTo("Dataset 'ds' loaded from 'msg.xml' (sdmx, 3 components)");
 	}
 }

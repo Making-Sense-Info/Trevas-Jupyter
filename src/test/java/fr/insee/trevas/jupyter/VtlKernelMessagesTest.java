@@ -61,7 +61,7 @@ class VtlKernelMessagesTest {
 				.isEqualTo(
 						"Dataset 'writeDs' loaded from 'src/test/resources/ds1.csv' (csv, 2"
 								+ " columns)\n"
-								+ "Dataset written to '"
+								+ "Dataset 'writeResult' written to '"
 								+ outputPath
 								+ "' (csv)");
 		assertThat(Files.exists(tempDir.resolve("out.csv"))).isTrue();
@@ -94,7 +94,7 @@ class VtlKernelMessagesTest {
 				.isEqualTo(
 						"Dataset 'countDs' loaded from 'src/test/resources/ds1.csv' (csv, 2"
 								+ " columns)\n"
-								+ "Dataset size: 5");
+								+ "nRows calculated");
 	}
 
 	private static String text(DisplayData displayData) {

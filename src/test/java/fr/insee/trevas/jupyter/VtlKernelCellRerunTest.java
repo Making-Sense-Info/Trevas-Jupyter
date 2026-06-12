@@ -58,7 +58,7 @@ class VtlKernelCellRerunTest {
 
 		DisplayData output = kernel.eval("nRows := getSize(taxi);");
 
-		assertThat(text(output)).isEqualTo("Dataset size: 5");
+		assertThat(text(output)).isEqualTo("nRows calculated");
 	}
 
 	@Test
@@ -73,6 +73,38 @@ class VtlKernelCellRerunTest {
 		// other and taxi still available for use in a follow-up cell
 		DisplayData followUp = kernel.eval("d := show(taxi); size := other;");
 		assertThat(text(followUp)).isEqualTo("d calculated");
+	}
+
+	@Test
+	void rerunningShowCellAfterWriteCellDoesNotShuffleMessages() throws Exception {
+		kernel.eval("taxi <- loadCSV(\"" + DS1 + "\");");
+		kernel.eval("w := writeParquet(\"output\", taxi);");
+		kernel.eval("m := showMetadata(taxi); d := show(taxi);");
+
+		DisplayData output = kernel.eval("m := showMetadata(taxi); d := show(taxi);");
+
+		assertThat(text(output)).isEqualTo("m calculated\n" + "d calculated");
+	}
+
+	@Test
+	void mixedWriteAndShowInSameCellKeepsMessageOrder() throws Exception {
+		DisplayData output =
+				kernel.eval(
+						"taxi <- loadCSV(\""
+								+ DS1
+								+ "\"); "
+								+ "w := writeParquet(\"output\", taxi); "
+								+ "m := showMetadata(taxi); "
+								+ "d := show(taxi);");
+
+		assertThat(text(output))
+				.isEqualTo(
+						"Dataset 'taxi' loaded from '"
+								+ DS1
+								+ "' (csv, 2 columns)\n"
+								+ "Dataset 'w' written to 'output' (parquet)\n"
+								+ "m calculated\n"
+								+ "d calculated");
 	}
 
 	private static String text(DisplayData displayData) {

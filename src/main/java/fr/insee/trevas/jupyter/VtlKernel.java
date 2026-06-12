@@ -83,38 +83,41 @@ public class VtlKernel extends BaseKernel {
 
 	public static SparkDataset loadParquet(String path) throws Exception {
 		SparkDataset dataset = SparkUtils.readParquetDataset(spark, path);
-		notifyLoad(dataset, "parquet", path);
+		notifyLoad("loadParquet", dataset, "parquet", path);
 		return dataset;
 	}
 
 	public static SparkDataset loadCSV(String path) throws Exception {
 		SparkDataset dataset = SparkUtils.readCSVDataset(spark, path);
-		notifyLoad(dataset, "csv", path);
+		notifyLoad("loadCSV", dataset, "csv", path);
 		return dataset;
 	}
 
 	public static SparkDataset loadSas(String path) throws Exception {
 		SparkDataset dataset = SparkUtils.readSasDataset(spark, path);
-		notifyLoad(dataset, "sas", path);
+		notifyLoad("loadSas", dataset, "sas", path);
 		return dataset;
 	}
 
 	public static String writeParquet(String path, Dataset ds) {
 		SparkUtils.writeParquetDataset(path, asSparkDataset(ds));
-		notify("Dataset written to '" + path + "' (parquet)");
+		notifyWrite("writeParquet", "parquet", path);
 		return "Dataset written to '" + path + "' (parquet)";
 	}
 
 	public static String writeCSV(String path, Dataset ds) {
 		SparkUtils.writeCSVDataset(path, asSparkDataset(ds));
-		notify("Dataset written to '" + path + "' (csv)");
+		notifyWrite("writeCSV", "csv", path);
 		return "Dataset written to '" + path + "' (csv)";
 	}
 
 	public static long getSize(Dataset ds) {
 		SparkDataset sparkDataset = asSparkDataset(ds);
 		long rowCount = sparkDataset.getDataPoints().size();
-		notify("Dataset size: " + rowCount);
+		LoadAssignmentContext.pollFor("getSize")
+				.ifPresentOrElse(
+						var -> notify(LoadAssignmentContext.formatCalculatedMessage(var)),
+						() -> notify("Dataset size: " + rowCount));
 		return rowCount;
 	}
 
@@ -124,7 +127,7 @@ public class VtlKernel extends BaseKernel {
 		} else {
 			displayData.putText(o.toString());
 		}
-		notifyCalculated();
+		notifyCalculated("show");
 		return o;
 	}
 
@@ -138,14 +141,14 @@ public class VtlKernel extends BaseKernel {
 		} else {
 			displayData.putText(o.toString());
 		}
-		notifyCalculated();
+		notifyCalculated("showMetadata");
 		return o;
 	}
 
 	public static Dataset loadSDMXEmptySource(String path, String id) {
 		Structured.DataStructure structure = TrevasSDMXUtils.buildStructureFromSDMX3(path, id);
 		Dataset dataset = new InMemoryDataset(List.of(List.of()), structure);
-		notifySdmxLoad(dataset, path, "empty SDMX source '" + id + "'");
+		notifySdmxLoad("loadSDMXEmptySource", dataset, path, "empty SDMX source '" + id + "'");
 		return dataset;
 	}
 
@@ -160,7 +163,10 @@ public class VtlKernel extends BaseKernel {
 								.csv(dataPath),
 						structure);
 		notifySdmxLoad(
-				dataset, dataPath, "SDMX source '" + id + "', structure from '" + path + "'");
+				"loadSDMXSource",
+				dataset,
+				dataPath,
+				"SDMX source '" + id + "', structure from '" + path + "'");
 		return dataset;
 	}
 
@@ -298,19 +304,27 @@ public class VtlKernel extends BaseKernel {
 		}
 	}
 
-	private static void notifyLoad(Dataset dataset, String format, String location) {
-		String variable = LoadAssignmentContext.pollTarget().orElse(null);
+	private static void notifyLoad(
+			String operation, Dataset dataset, String format, String location) {
+		String variable = LoadAssignmentContext.pollFor(operation).orElse(null);
 		notify(
 				LoadAssignmentContext.formatLoadMessage(
 						variable, location, format, dataset.getDataStructure().size()));
 	}
 
-	private static void notifyCalculated() {
-		LoadAssignmentContext.pollTarget().ifPresent(var -> notify(LoadAssignmentContext.formatCalculatedMessage(var)));
+	private static void notifyWrite(String operation, String format, String location) {
+		String variable = LoadAssignmentContext.pollFor(operation).orElse(null);
+		notify(LoadAssignmentContext.formatWriteMessage(variable, location, format));
 	}
 
-	private static void notifySdmxLoad(Dataset dataset, String location, String details) {
-		String variable = LoadAssignmentContext.pollTarget().orElse(null);
+	private static void notifyCalculated(String operation) {
+		LoadAssignmentContext.pollFor(operation)
+				.ifPresent(var -> notify(LoadAssignmentContext.formatCalculatedMessage(var)));
+	}
+
+	private static void notifySdmxLoad(
+			String operation, Dataset dataset, String location, String details) {
+		String variable = LoadAssignmentContext.pollFor(operation).orElse(null);
 		notify(
 				LoadAssignmentContext.formatSdmxLoadMessage(
 						variable, location, details, dataset.getDataStructure().size()));

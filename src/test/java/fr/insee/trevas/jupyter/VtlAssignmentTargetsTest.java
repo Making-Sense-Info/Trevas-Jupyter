@@ -7,6 +7,7 @@ import javax.script.Bindings;
 import javax.script.SimpleBindings;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 class VtlAssignmentTargetsTest {
 
@@ -19,33 +20,31 @@ class VtlAssignmentTargetsTest {
 	}
 
 	@Test
-	void allInExtractsCalcAssignments() {
+	void feedbackInCapturesOperationType() {
 		assertThat(
-						VtlAssignmentTargets.allIn(
-								"ds <- loadCSV(\"a.csv\"); out <- ds[calc measure \"x\" := 1];"))
-				.containsExactly("ds", "out");
+						VtlAssignmentTargets.feedbackIn(
+								"taxi <- loadCSV(\"a.csv\"); "
+										+ "w := writeParquet(\"out\", taxi); "
+										+ "m := showMetadata(taxi); "
+										+ "d := show(taxi);"))
+				.extracting(VtlAssignmentTargets.FeedbackTarget::variable, VtlAssignmentTargets.FeedbackTarget::operation)
+				.containsExactly(
+						tuple("taxi", "loadCSV"),
+						tuple("w", "writeParquet"),
+						tuple("m", "showMetadata"),
+						tuple("d", "show"));
 	}
 
 	@Test
-	void allInReturnsEmptyWhenNoAssignment() {
-		assertThat(VtlAssignmentTargets.allIn("show(taxi); getSize(taxi);")).isEmpty();
+	void feedbackInNormalizesSizeToGetSize() {
+		assertThat(VtlAssignmentTargets.feedbackIn("n := size(taxi);"))
+				.extracting(VtlAssignmentTargets.FeedbackTarget::operation)
+				.containsExactly("getSize");
 	}
 
 	@Test
-	void withKernelFeedbackInOnlyMatchesLoadAndShowCalls() {
-		assertThat(
-						VtlAssignmentTargets.withKernelFeedbackIn(
-								"taxi <- loadCSV(\"a.csv\"); m := showMetadata(taxi); n := getSize(taxi);"))
-				.containsExactly("taxi", "m");
-	}
-
-	@Test
-	void withKernelFeedbackInMatchesSdmxLoads() {
-		assertThat(
-						VtlAssignmentTargets.withKernelFeedbackIn(
-								"empty := loadSDMXEmptySource(\"msg.xml\", \"ID1\"); "
-										+ "full <- loadSDMXSource(\"msg.xml\", \"ID1\", \"data.csv\");"))
-				.containsExactly("empty", "full");
+	void feedbackInReturnsEmptyWhenNoTrackedCall() {
+		assertThat(VtlAssignmentTargets.feedbackIn("x := 1 + 2;")).isEmpty();
 	}
 
 	@Test
