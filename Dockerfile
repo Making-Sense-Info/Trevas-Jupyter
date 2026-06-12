@@ -13,7 +13,11 @@ COPY target/appassembler/repo/fr/insee/trevas/vtl-parser/*/vtl-parser-*.jar /vtl
 
 USER root
 
-RUN pip3 install --upgrade elyra-pipeline-editor-extension
+# Elyra 4.x for JupyterLab 4.x — pin versions together; python-editor is required so the
+# Elyra launcher does not duplicate every tile (pipeline-editor alone is not enough).
+ARG ELYRA_VERSION=4.1.1
+COPY docker/install-elyra.sh /opt/install-elyra.sh
+RUN chmod +x /opt/install-elyra.sh && /opt/install-elyra.sh "${ELYRA_VERSION}"
 
 # Add your entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
