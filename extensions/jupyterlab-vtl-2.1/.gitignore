@@ -1,0 +1,10 @@
+node_modules/
+lib/
+jupyterlab_vtl_2_1/labextension/
+*.tsbuildinfo
+dist/
+.yarn/
+.venv/
+.pnp.cjs
+.pnp.loader.mjs
+install.json
