@@ -95,13 +95,24 @@ fi
 
 rm -rf dist
 jlpm install --immutable
-jlpm test
-jlpm build
+if [[ "${SKIP_VTL_TESTS:-0}" != "1" ]]; then
+	jlpm test
+else
+	echo "Skipping jlpm test (SKIP_VTL_TESTS=1)" >&2
+fi
+jlpm run build:lib
+jlpm run build:labextension
 pip_wheel . -w dist --no-deps
 
 WHEEL=(dist/jupyterlab_vtl_2_1-*.whl)
 if [[ ! -f "${WHEEL[0]}" ]]; then
 	echo "error: wheel was not produced under ${EXT_DIR}/dist" >&2
+	exit 1
+fi
+
+# install.json must be packaged (Dockerfile verifies it after pip install).
+if ! python3 -m zipfile -l "${WHEEL[0]}" | grep -q 'labextensions/jupyterlab-vtl-2-1/install.json'; then
+	echo "error: wheel is missing install.json — commit extensions/jupyterlab-vtl-2.1/install.json" >&2
 	exit 1
 fi
 

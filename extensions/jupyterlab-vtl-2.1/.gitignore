@@ -7,4 +7,3 @@ dist/
 .venv/
 .pnp.cjs
 .pnp.loader.mjs
-install.json

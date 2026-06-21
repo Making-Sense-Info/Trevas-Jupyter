@@ -2,6 +2,10 @@
 #   docker buildx build --platform linux/amd64 ...
 #
 # Trevas JVM kernel is built in the kernel-build stage (patched basekernel, no host mvn required).
+#
+# VTL extension wheel (py3-none-any) must be in the build context:
+#   ./docker/build-trevas-jupyter-image.sh
+# (builds the wheel on the host with Node 22 + jlpm, then runs docker buildx)
 
 FROM eclipse-temurin:17-jdk AS kernel-build
 WORKDIR /build
@@ -45,12 +49,10 @@ RUN chmod +x /opt/install-jupyter-extensions.sh && \
 	/opt/install-jupyter-extensions.sh
 
 # VTL 2.1 JupyterLab editor (highlighting, ANTLR lint, autocomplete).
-# Wheel is built in CI / locally via docker/build-vtl-extension-wheel.sh before image build.
 COPY extensions/jupyterlab-vtl-2.1/dist/jupyterlab_vtl_2_1-*.whl /tmp/
-RUN /opt/python/bin/pip install --no-cache-dir /tmp/jupyterlab_vtl_2_1-*.whl && \
-	rm -f /tmp/jupyterlab_vtl_2_1-*.whl && \
-	test -f /opt/python/share/jupyter/labextensions/jupyterlab-vtl-2-1/package.json && \
-	test -f /opt/python/share/jupyter/labextensions/jupyterlab-vtl-2-1/install.json
+COPY docker/install-vtl-labextension.sh /opt/install-vtl-labextension.sh
+RUN chmod +x /opt/install-vtl-labextension.sh \
+	&& /opt/install-vtl-labextension.sh /tmp/jupyterlab_vtl_2_1-*.whl
 
 # Add your entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

@@ -1,0 +1,6 @@
+{
+  "packageManager": "npm",
+  "baseUrl": ".",
+  "packageName": "jupyterlab-vtl-2-1",
+  "uninstallInstructions": "Use your Python package manager (pip, conda, etc.) to uninstall jupyterlab-vtl-2-1"
+}

@@ -21,11 +21,12 @@ Build locally (requires **Node.js 22**, **Docker** — Maven/Java build runs ins
 
 ```shell
 cd Trevas-Jupyter
-chmod +x docker/build-vtl-extension-wheel.sh
-./docker/build-vtl-extension-wheel.sh
-docker buildx build --platform linux/amd64 -t trevas-jupyter:local --load .
+chmod +x docker/build-trevas-jupyter-image.sh
+./docker/build-trevas-jupyter-image.sh
 docker run --rm -p 8888:8888 trevas-jupyter:local
 ```
+
+(`build-trevas-jupyter-image.sh` builds the VTL wheel on the host, then runs `docker buildx`. Do not run `docker build` alone — the wheel must exist in `extensions/jupyterlab-vtl-2.1/dist/`.)
 
 On Apple Silicon, keep `--platform linux/amd64` (the base image is amd64).
 
