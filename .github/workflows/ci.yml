@@ -68,16 +68,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: yarn
-          cache-dependency-path: extensions/jupyterlab-vtl-2.1/yarn.lock
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install jlpm (via JupyterLab)
+        run: pip install "jupyterlab>=4.4.0,<5"
 
       - name: Install extension dependencies
         working-directory: extensions/jupyterlab-vtl-2.1
-        run: corepack enable && corepack yarn install --immutable
+        run: jlpm install --immutable
 
       - name: Run VTL extension unit tests
         working-directory: extensions/jupyterlab-vtl-2.1
-        run: corepack yarn test
+        run: jlpm test
 
   build_vtl_extension:
     needs: [check_format, test_vtl_extension]

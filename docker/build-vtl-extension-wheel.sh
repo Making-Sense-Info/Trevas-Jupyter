@@ -94,7 +94,7 @@ if ! command -v jlpm >/dev/null 2>&1; then
 fi
 
 rm -rf dist
-jlpm install
+jlpm install --immutable
 jlpm test
 jlpm build
 pip_wheel . -w dist --no-deps
