@@ -33,3 +33,8 @@ build/
 .vscode/
 
 .DS_Store
+
+# JupyterLab extension (local dev artifacts)
+extensions/**/node_modules/
+extensions/**/lib/
+extensions/**/jupyterlab_vtl_2_1/labextension/

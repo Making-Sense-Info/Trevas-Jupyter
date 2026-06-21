@@ -1,0 +1,7 @@
+.git
+.github
+**/.venv
+extensions/jupyterlab-vtl-2.1/node_modules
+extensions/jupyterlab-vtl-2.1/src
+extensions/jupyterlab-vtl-2.1/lib
+extensions/jupyterlab-vtl-2.1/.yarn

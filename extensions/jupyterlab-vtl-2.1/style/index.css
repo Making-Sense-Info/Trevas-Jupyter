@@ -1,0 +1,29 @@
+/* VTL 2.1 — Elyra/Onyxia compatibility (colors: vtl-theme.ts, lint: vtl-lint-theme.ts) */
+
+/* --vtl-error-color is set on .cm-editor by vtl-lint-theme.ts from VTL_COLORS.error */
+
+.jp-Notebook .jp-CodeCell .cm-content [class*='cm-vtl-'],
+.cm-editor .cm-content [class*='cm-vtl-'] {
+	-webkit-text-fill-color: initial;
+}
+
+/* Lint squiggle fallback — uses CSS var from vtl-lint-theme.ts */
+.jp-Notebook .jp-CodeCell .cm-content .cm-lintRange-error,
+.jp-Notebook .jp-CodeCell .cm-content .cm-lintRange.cm-vtl-error,
+.jp-Notebook .jp-CodeCell .cm-content .cm-vtl-error,
+.cm-editor .cm-content .cm-lintRange-error,
+.cm-editor .cm-content .cm-lintRange.cm-vtl-error,
+.cm-editor .cm-content .cm-vtl-error {
+	background-repeat: repeat-x !important;
+	background-position: left bottom !important;
+	background-color: transparent !important;
+	padding-bottom: 0.7px;
+	text-decoration: underline wavy var(--vtl-error-color, #d11) !important;
+	text-decoration-skip-ink: none;
+}
+
+.jp-Notebook .jp-CodeCell .cm-content .cm-diagnostic-error,
+.cm-editor .cm-content .cm-diagnostic-error {
+	border-left: 5px solid var(--vtl-error-color, #d11) !important;
+	color: var(--vtl-error-color, #d11) !important;
+}

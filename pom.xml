@@ -35,10 +35,6 @@
             <url>https://repos.spark-packages.org/</url>
         </repository>
         <repository>
-            <id>vendor</id>
-            <url>file://${project.basedir}/vendor</url>
-        </repository>
-        <repository>
             <id>Github</id>
             <url>https://maven.pkg.github.com/bis-med-it/sdmx-core</url>
             <snapshots>
@@ -106,7 +102,7 @@
         <dependency>
             <groupId>io.github.spencerpark</groupId>
             <artifactId>jupyter-jvm-basekernel</artifactId>
-            <version>2.3.0</version>
+            <version>2.3.0-trevas</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.code.gson</groupId>
@@ -146,12 +142,6 @@
                     <artifactId>slf4j-reload4j</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>com.intigua</groupId>
-            <artifactId>antlr4-autosuggest</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>

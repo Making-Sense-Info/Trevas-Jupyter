@@ -13,7 +13,7 @@ public class SDMXTest {
 
 	@BeforeAll
 	public void setup() throws Exception {
-		new VtlKernel();
+		VtlKernel.bootstrapForTests();
 	}
 
 	@Test
@@ -35,24 +35,24 @@ public class SDMXTest {
 	}
 
 	@Test
-	public void testRunSDMXPreview() {
+	public void testRunSDMXPreview() throws Exception {
 		VtlKernel.runSDMXPreview("src/test/resources/sdmx/DSD_BPE_CENSUS.xml");
 	}
 
 	@Test
-	public void testRunSDMX() {
+	public void testRunSDMX() throws Exception {
 		VtlKernel.runSDMX("src/test/resources/sdmx/DSD_BPE_CENSUS.xml",
 				"BPE_DETAIL_VTL,src/test/resources/sdmx/BPE_DETAIL_SAMPLE.csv," +
 						"LEGAL_POP,src/test/resources/sdmx/LEGAL_POP_NUTS3.csv");
 	}
 
 	@Test
-	public void testGetTransformationsVTL() {
+	public void testGetTransformationsVTL() throws Exception {
 		VtlKernel.getTransformationsVTL("src/test/resources/sdmx/DSD_BPE_CENSUS.xml");
 	}
 
 	@Test
-	public void testGetRulesetsVTL() {
+	public void testGetRulesetsVTL() throws Exception {
 		VtlKernel.getRulesetsVTL("src/test/resources/sdmx/DSD_BPE_CENSUS.xml");
 	}
 }

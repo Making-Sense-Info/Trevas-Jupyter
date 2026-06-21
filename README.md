@@ -15,15 +15,32 @@ TODO
 
 ### With Docker
 
+The image includes the **Trevas VTL kernel**, **jupyterlab-vtl-2-1** (editor: highlighting, lint, autocomplete), **Elyra 4.1.1** (pipelines) and **[Arbalister](https://github.com/QuantStack/Arbalister)** 0.2.1 (Parquet/CSV viewer). JupyterLab is upgraded to **4.5.x** during the image build because Arbalister requires `>= 4.5.0` (the Onyxia base image ships 4.4.x).
+
+Build locally (requires **Node.js 22**, **Docker** — Maven/Java build runs inside Docker):
+
 ```shell
-mvn package -DskipTests
-docker buildx build --platform linux/amd64 -t jupyter_vtl --load .
-docker run -p 8888:8888 jupyter_vtl
+cd Trevas-Jupyter
+chmod +x docker/build-vtl-extension-wheel.sh
+./docker/build-vtl-extension-wheel.sh
+docker buildx build --platform linux/amd64 -t trevas-jupyter:local --load .
+docker run --rm -p 8888:8888 trevas-jupyter:local
 ```
 
-The image includes **Elyra 4.1.1** (pipelines) and **[Arbalister](https://github.com/QuantStack/Arbalister)** 0.2.1 (double-click Parquet/CSV/Avro files in the file browser to view them as tables). JupyterLab is upgraded to **4.5.x** during the image build because Arbalister requires `>= 4.5.0` (the Onyxia base image ships 4.4.x).
+On Apple Silicon, keep `--platform linux/amd64` (the base image is amd64).
 
-**Parquet viewer troubleshooting:** if opening a `.parquet` file shows *"is not UTF-8 encoded"*, JupyterLab is using the text editor instead of Arbalister — usually because JupyterLab is still on 4.4.x. After `writeParquet`, open a `part-*.parquet` file inside the `output/` directory (Spark writes a folder, not a single file). On a running container (as root): `pip install "jupyterlab>=4.5.0,<5" arbalister==0.2.1` then restart JupyterLab.
+After `docker run`, open the JupyterLab URL printed in the logs. In a new notebook with kernel **Trevas VTL**, type invalid VTL to verify editor lint in cells.
+
+Optional checks inside a running container:
+
+```shell
+docker exec -it <container_id> /opt/python/bin/jupyter kernelspec list
+docker exec -it <container_id> /opt/python/bin/jupyter labextension list | grep -i vtl
+```
+
+Published images: `makingsenseinfo/trevas-jupyter` (built and pushed on git tags `vX.Y.Z`).
+
+**Parquet viewer troubleshooting:** if opening a `.parquet` file shows *"is not UTF-8 encoded"*, JupyterLab is using the text editor instead of Arbalister. After `writeParquet`, open a `part-*.parquet` file inside the `output/` directory (Spark writes a folder, not a single file). On a running container (as root): `pip install "jupyterlab>=4.5.0,<5" arbalister==0.2.1` then restart JupyterLab.
 
 ## Custom functions
 

@@ -14,7 +14,6 @@ import io.github.spencerpark.jupyter.channels.JupyterSocket;
 import io.github.spencerpark.jupyter.kernel.BaseKernel;
 import io.github.spencerpark.jupyter.kernel.KernelConnectionProperties;
 import io.github.spencerpark.jupyter.kernel.LanguageInfo;
-import io.github.spencerpark.jupyter.kernel.ReplacementOptions;
 import io.github.spencerpark.jupyter.kernel.display.DisplayData;
 import io.github.spencerpark.jupyter.kernel.display.mime.MIMEType;
 import io.sdmx.api.io.ReadableDataLocation;
@@ -23,7 +22,6 @@ import org.apache.spark.sql.SparkSession;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
-import javax.script.ScriptEngineFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,22 +34,38 @@ import java.util.stream.Collectors;
 
 public class VtlKernel extends BaseKernel {
 
+	private static final String VTL_MIME = "text/x-vtl";
+
 	private static DisplayData displayData = new DisplayData();
 	private static SparkSession spark;
 	private static VtlScriptEngine engine;
+	private static boolean globalMethodsRegistered;
 	private final LanguageInfo info;
-	private final AutoCompleter autoCompleter;
 
-	public VtlKernel() throws Exception {
+	public VtlKernel() {
+		this.info =
+				new LanguageInfo.Builder("VTL")
+						.version("2.3")
+						.mimetype(VTL_MIME)
+						.fileExtension(".vtl")
+						.codemirror("vtl")
+						.build();
+	}
+
+	static void bootstrapForTests() throws Exception {
+		ensureEngineReady();
+	}
+
+	private static synchronized void ensureEngineReady() throws Exception {
+		if (engine != null) {
+			return;
+		}
 		spark = SparkUtils.buildSparkSession();
 		engine = SparkUtils.buildSparkEngine(spark);
-		ScriptEngineFactory factory = engine.getFactory();
-		this.info =
-				new LanguageInfo.Builder(factory.getEngineName())
-						.version(factory.getEngineVersion())
-						.build();
-		registerGlobalMethods();
-		this.autoCompleter = new OranoranCompleter();
+		if (!globalMethodsRegistered) {
+			registerGlobalMethods();
+			globalMethodsRegistered = true;
+		}
 	}
 
 	private static Map<String, Dataset.Role> getRoleMap(
@@ -82,36 +96,42 @@ public class VtlKernel extends BaseKernel {
 	}
 
 	public static SparkDataset loadParquet(String path) throws Exception {
+		ensureEngineReady();
 		SparkDataset dataset = SparkUtils.readParquetDataset(spark, path);
 		notifyLoad("loadParquet", dataset, "parquet", path);
 		return dataset;
 	}
 
 	public static SparkDataset loadCSV(String path) throws Exception {
+		ensureEngineReady();
 		SparkDataset dataset = SparkUtils.readCSVDataset(spark, path);
 		notifyLoad("loadCSV", dataset, "csv", path);
 		return dataset;
 	}
 
 	public static SparkDataset loadSas(String path) throws Exception {
+		ensureEngineReady();
 		SparkDataset dataset = SparkUtils.readSasDataset(spark, path);
 		notifyLoad("loadSas", dataset, "sas", path);
 		return dataset;
 	}
 
-	public static String writeParquet(String path, Dataset ds) {
+	public static String writeParquet(String path, Dataset ds) throws Exception {
+		ensureEngineReady();
 		SparkUtils.writeParquetDataset(path, asSparkDataset(ds));
 		notifyWrite("writeParquet", "parquet", path);
 		return "Dataset written to '" + path + "' (parquet)";
 	}
 
-	public static String writeCSV(String path, Dataset ds) {
+	public static String writeCSV(String path, Dataset ds) throws Exception {
+		ensureEngineReady();
 		SparkUtils.writeCSVDataset(path, asSparkDataset(ds));
 		notifyWrite("writeCSV", "csv", path);
 		return "Dataset written to '" + path + "' (csv)";
 	}
 
-	public static long getSize(Dataset ds) {
+	public static long getSize(Dataset ds) throws Exception {
+		ensureEngineReady();
 		SparkDataset sparkDataset = asSparkDataset(ds);
 		long rowCount = sparkDataset.getDataPoints().size();
 		LoadAssignmentContext.pollFor("getSize")
@@ -121,7 +141,8 @@ public class VtlKernel extends BaseKernel {
 		return rowCount;
 	}
 
-	public static Object show(Object o) throws ClassNotFoundException {
+	public static Object show(Object o) throws Exception {
+		ensureEngineReady();
 		if (o instanceof Dataset dataset) {
 			showDataset(asSparkDataset(dataset));
 		} else {
@@ -135,7 +156,8 @@ public class VtlKernel extends BaseKernel {
 		displayData.putHTML(DatasetUtils.datasetToDisplay(dataset));
 	}
 
-	public static Object showMetadata(Object o) {
+	public static Object showMetadata(Object o) throws Exception {
+		ensureEngineReady();
 		if (o instanceof Dataset) {
 			displayData.putHTML(DatasetUtils.datasetMetadataToDisplay((Dataset) o));
 		} else {
@@ -152,7 +174,8 @@ public class VtlKernel extends BaseKernel {
 		return dataset;
 	}
 
-	public static Dataset loadSDMXSource(String path, String id, String dataPath) {
+	public static Dataset loadSDMXSource(String path, String id, String dataPath) throws Exception {
+		ensureEngineReady();
 		Structured.DataStructure structure = TrevasSDMXUtils.buildStructureFromSDMX3(path, id);
 		Dataset dataset =
 				new SparkDataset(
@@ -178,7 +201,8 @@ public class VtlKernel extends BaseKernel {
 				.forEach(bindings::remove);
 	}
 
-	public static void runSDMXPreview(String path) {
+	public static void runSDMXPreview(String path) throws Exception {
+		ensureEngineReady();
 		ReadableDataLocation rdl = new ReadableDataLocationTmp(path);
 
 		SDMXVTLWorkflow sdmxVtlWorkflow = new SDMXVTLWorkflow(engine, rdl, Map.of());
@@ -204,7 +228,8 @@ public class VtlKernel extends BaseKernel {
 		displayData.putHTML(result.toString());
 	}
 
-	public static void runSDMX(String path, String data) {
+	public static void runSDMX(String path, String data) throws Exception {
+		ensureEngineReady();
 		String[] dataList = data.split(",");
 		if (dataList.length % 2 != 0) {
 			throw new IllegalArgumentException("Data params length invalid: " + dataList.length);
@@ -255,7 +280,8 @@ public class VtlKernel extends BaseKernel {
 		displayData.putHTML(result.toString());
 	}
 
-	public static void getTransformationsVTL(String path) {
+	public static void getTransformationsVTL(String path) throws Exception {
+		ensureEngineReady();
 		ReadableDataLocation rdl = new ReadableDataLocationTmp(path);
 		SDMXVTLWorkflow sdmxVtlWorkflow = new SDMXVTLWorkflow(engine, rdl, Map.of());
 		String vtl = sdmxVtlWorkflow.getTransformationsVTL();
@@ -263,7 +289,8 @@ public class VtlKernel extends BaseKernel {
 		displayData.putText(vtl);
 	}
 
-	public static void getRulesetsVTL(String path) {
+	public static void getRulesetsVTL(String path) throws Exception {
+		ensureEngineReady();
 		ReadableDataLocation rdl = new ReadableDataLocationTmp(path);
 		SDMXVTLWorkflow sdmxVtlWorkflow = new SDMXVTLWorkflow(engine, rdl, Map.of());
 		String dprs = sdmxVtlWorkflow.getRulesetsVTL();
@@ -288,10 +315,22 @@ public class VtlKernel extends BaseKernel {
 		JupyterConnection connection = new JupyterConnection(connProps);
 
 		VtlKernel kernel = new VtlKernel();
-
 		kernel.becomeHandlerForConnection(connection);
-
 		connection.connect();
+
+		Thread sparkInit =
+				new Thread(
+						() -> {
+							try {
+								ensureEngineReady();
+							} catch (Exception e) {
+								throw new RuntimeException("Failed to initialize Spark/Trevas engine", e);
+							}
+						},
+						"trevas-spark-init");
+		sparkInit.setDaemon(true);
+		sparkInit.start();
+
 		connection.waitUntilClose();
 	}
 
@@ -352,63 +391,59 @@ public class VtlKernel extends BaseKernel {
 		java.util.logging.Logger.getLogger("org.sparkproject").setLevel(Level.WARNING);
 	}
 
-	private void registerGlobalMethods() throws NoSuchMethodException {
-		this.engine.registerGlobalMethod(
+	private static void registerGlobalMethods() throws NoSuchMethodException {
+		engine.registerGlobalMethod(
 				"loadParquet", VtlKernel.class.getMethod("loadParquet", String.class));
-		this.engine.registerGlobalMethod(
+		engine.registerGlobalMethod(
 				"loadCSV", VtlKernel.class.getMethod("loadCSV", String.class));
-		this.engine.registerGlobalMethod(
+		engine.registerGlobalMethod(
 				"loadSas", VtlKernel.class.getMethod("loadSas", String.class));
-		this.engine.registerGlobalMethod(
+		engine.registerGlobalMethod(
 				"writeParquet",
 				VtlKernel.class.getMethod("writeParquet", String.class, Dataset.class));
-		this.engine.registerGlobalMethod(
+		engine.registerGlobalMethod(
 				"writeCSV", VtlKernel.class.getMethod("writeCSV", String.class, Dataset.class));
-		this.engine.registerGlobalMethod("show", VtlKernel.class.getMethod("show", Object.class));
-		this.engine.registerGlobalMethod(
+		engine.registerGlobalMethod("show", VtlKernel.class.getMethod("show", Object.class));
+		engine.registerGlobalMethod(
 				"showMetadata", VtlKernel.class.getMethod("showMetadata", Object.class));
-		this.engine.registerGlobalMethod(
+		engine.registerGlobalMethod(
 				"size", VtlKernel.class.getMethod("getSize", Dataset.class));
-		this.engine.registerGlobalMethod(
+		engine.registerGlobalMethod(
 				"getSize", VtlKernel.class.getMethod("getSize", Dataset.class));
 
 		// SDMX
-		this.engine.registerGlobalMethod(
+		engine.registerGlobalMethod(
 				"loadSDMXEmptySource",
 				VtlKernel.class.getMethod("loadSDMXEmptySource", String.class, String.class));
-		this.engine.registerGlobalMethod(
+		engine.registerGlobalMethod(
 				"loadSDMXSource",
 				VtlKernel.class.getMethod(
 						"loadSDMXSource", String.class, String.class, String.class));
-		this.engine.registerGlobalMethod(
+		engine.registerGlobalMethod(
 				"runSDMXPreview", VtlKernel.class.getMethod("runSDMXPreview", String.class));
-		this.engine.registerGlobalMethod(
+		engine.registerGlobalMethod(
 				"runSDMX", VtlKernel.class.getMethod("runSDMX", String.class, String.class)
 		);
-		this.engine.registerGlobalMethod(
+		engine.registerGlobalMethod(
 				"getTransformationsVTL",
 				VtlKernel.class.getMethod("getTransformationsVTL", String.class));
-		this.engine.registerGlobalMethod(
+		engine.registerGlobalMethod(
 				"getRulesetsVTL", VtlKernel.class.getMethod("getRulesetsVTL", String.class));
 	}
 
 	@Override
 	public synchronized DisplayData eval(String expr) throws Exception {
+		ensureEngineReady();
 		displayData = new DisplayData();
 		try {
 			VtlAssignmentTargets.clearFrom(engine.getBindings(ScriptContext.ENGINE_SCOPE), expr);
 			LoadAssignmentContext.prepare(expr);
-			this.engine.eval(expr);
+			engine.eval(expr);
 			notifyTopLevelAssignments(expr);
 			return displayData;
 		} finally {
 			LoadAssignmentContext.clear();
 		}
-	}
-
-	@Override
-	public ReplacementOptions complete(String code, int at) {
-		return this.autoCompleter.complete(code, at);
 	}
 
 	@Override
