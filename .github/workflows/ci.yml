@@ -73,11 +73,11 @@ jobs:
 
       - name: Install extension dependencies
         working-directory: extensions/jupyterlab-vtl-2.1
-        run: yarn install --frozen-lockfile
+        run: corepack enable && corepack yarn install --immutable
 
       - name: Run VTL extension unit tests
         working-directory: extensions/jupyterlab-vtl-2.1
-        run: yarn test
+        run: corepack yarn test
 
   build_vtl_extension:
     needs: [check_format, test_vtl_extension]
